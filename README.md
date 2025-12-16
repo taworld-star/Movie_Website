@@ -23,7 +23,7 @@ git clone https://github.com/Ayushparikh-code/Web-dev-mini-projects.git
 ```
 
 - Go to the directory
-- Open movie-website folder
+- Open Movie_Website folder
 - Open index.html with live server 
 
 ### Things used in the project
