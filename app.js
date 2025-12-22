@@ -3,10 +3,30 @@ const INITIAL_SEARCH_VALUE = 'spiderman';
 const log = console.log;
 
 // Selecting elements from the DOM
-const searchButton = document.querySelector('#search');;
+const searchButton = document.querySelector('#search');
 const searchInput = document.querySelector('#exampleInputEmail1');
 const moviesContainer = document.querySelector('#movies-container');
 const moviesSearchable = document.querySelector('#movies-searchable');
+const modal = document.querySelector('#modal');
+const modalBody = document.querySelector('#modal-body');
+const closeBtn = document.querySelector('.close');
+const loadingSpinner = document.querySelector('#loading');
+
+// Modal close event
+closeBtn.onclick = function () {
+    modal.style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function (event) {
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function showLoading(show) {
+    loadingSpinner.style.display = show ? 'block' : 'none';
+}
 
 function createImageContainer(imageUrl, id) {
     const tempDiv = document.createElement('div');
@@ -14,7 +34,7 @@ function createImageContainer(imageUrl, id) {
     tempDiv.setAttribute('data-id', id);
 
     const movieElement = `
-        <img src="${imageUrl}" alt="" data-movie-id="${id}">
+        <img src="${imageUrl}" alt="Movie Poster" data-movie-id="${id}" loading="lazy">
     `;
     tempDiv.innerHTML = movieElement;
 
@@ -27,69 +47,74 @@ function resetInput() {
 
 function handleGeneralError(error) {
     log('Error: ', error.message);
-    alert(error.message || 'Internal Server');
+    alert(error.message || 'Internal Server Error');
+    showLoading(false);
 }
 
 function createIframe(video) {
     const videoKey = (video && video.key) || 'No key found!!!';
     const iframe = document.createElement('iframe');
     iframe.src = `https://www.youtube.com/embed/${videoKey}`;
-    iframe.width = 360;
-    iframe.height = 315;
+    iframe.width = '100%';
+    iframe.height = '400';
+    iframe.style.minHeight = '300px';
+    iframe.style.borderRadius = '10px';
     iframe.allowFullscreen = true;
     return iframe;
 }
 
 function insertIframeIntoContent(video, content) {
     const videoContent = document.createElement('div');
+    videoContent.style.marginBottom = '2rem';
     const iframe = createIframe(video);
 
     videoContent.appendChild(iframe);
     content.appendChild(videoContent);
 }
 
-
 function createVideoTemplate(data) {
-    const content = this.content;
-    content.innerHTML = '<p id="content-close">X</p>';
-    
     const videos = data.results || [];
 
+    let htmlContent = '';
+
     if (videos.length === 0) {
-        content.innerHTML = `
-            <p id="content-close">X</p>
-            <p>No Trailer found for this video id of ${data.id}</p>
+        htmlContent = `
+            <div style="text-align: center; padding: 2rem;">
+                <p>Tidak ada trailer untuk film ini</p>
+            </div>
         `;
-        return;
+    } else {
+        for (let i = 0; i < Math.min(videos.length, 4); i++) {
+            const video = videos[i];
+            const videoKey = (video && video.key) || 'No key found!!!';
+            htmlContent += `
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">${video.name || 'Trailer'}</h3>
+                    <iframe 
+                        src="https://www.youtube.com/embed/${videoKey}" 
+                        width="100%" 
+                        height="400" 
+                        style="border-radius: 10px;"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            `;
+        }
     }
 
-    for (let i = 0; i < 4; i++) {
-        const video = videos[i];
-        insertIframeIntoContent(video, content);
-    }
+    return htmlContent;
 }
-
-function createSectionHeader(title) {
-    const header = document.createElement('h2');
-    header.innerHTML = title;
-
-    return header;
-}
-
 
 function renderMovies(data) {
     const moviesBlock = generateMoviesBlock(data);
-    const header = createSectionHeader(this.title);
-    moviesBlock.insertBefore(header, moviesBlock.firstChild);
     moviesContainer.appendChild(moviesBlock);
 }
-
-
 
 function renderSearchMovies(data) {
     moviesSearchable.innerHTML = '';
     const moviesBlock = generateMoviesBlock(data);
     moviesSearchable.appendChild(moviesBlock);
+    showLoading(false);
 }
 
 function generateMoviesBlock(data) {
@@ -102,65 +127,75 @@ function generateMoviesBlock(data) {
 
         if (poster_path) {
             const imageUrl = MOVIE_DB_IMAGE_ENDPOINT + poster_path;
-    
             const imageContainer = createImageContainer(imageUrl, id);
             section.appendChild(imageContainer);
         }
     }
 
-    const movieSectionAndContent = createMovieContainer(section);
-    return movieSectionAndContent;
+    return section;
 }
 
-
-
-// Inserting section before content element
-function createMovieContainer(section) {
-    const movieElement = document.createElement('div');
-    movieElement.setAttribute('class', 'movie');
-
-    const template = `
-        <div class="content">
-            <p id="content-close">X</p>
+function showMovieModal(movieData) {
+    modalBody.innerHTML = `
+        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <div>
+                <img src="${MOVIE_DB_IMAGE_ENDPOINT}${movieData.poster_path}" 
+                     alt="${movieData.title}" 
+                     style="width: 100%; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
+            </div>
+            <div>
+                <h2 style="margin-top: 0; color: #06dee1; font-size: 1.8rem;">${movieData.title || movieData.name}</h2>
+                <p style="color: #79ff6c; font-size: 1.1rem; margin: 0.5rem 0;">
+                    <i class="fas fa-star"></i> ${(movieData.vote_average || 0).toFixed(1)}/10
+                </p>
+                <p style="color: rgba(255,255,255,0.8); margin: 1rem 0;">
+                    <strong>Release Date:</strong> ${movieData.release_date || 'N/A'}
+                </p>
+                <p style="color: rgba(255,255,255,0.8); line-height: 1.6;">
+                    <strong>Overview:</strong><br>${movieData.overview || 'Tidak ada deskripsi'}
+                </p>
+            </div>
+        </div>
+        <div id="trailer-section">
+            <h3 style="color: #06dee1; margin-top: 2rem; margin-bottom: 1rem;">Trailer</h3>
+            <div id="trailers-container">Loading trailers...</div>
         </div>
     `;
-
-    movieElement.innerHTML = template;
-    movieElement.insertBefore(section, movieElement.firstChild);
-    return movieElement;
-}
-
-searchButton.onclick = function (event) {
-    event.preventDefault();
-    const value = searchInput.value
-   if (value) {
-    searchMovie(value);
-   }
-    resetInput();
+    
+    modal.style.display = 'block';
+    
+    // Fetch and display trailers
+    getVideosByMovieId(movieData.id);
 }
 
 // Click on any movies
 // Event Delegation
 document.onclick = function (event) {
-    log('Event: ', event);
-    const { tagName, id } = event.target;
-    if (tagName.toLowerCase() === 'img') {
+    const { tagName } = event.target;
+    if (tagName.toLowerCase() === 'img' && event.target.dataset.movieId) {
         const movieId = event.target.dataset.movieId;
-        const section = event.target.parentElement.parentElement;
-        const content = section.nextElementSibling;
-        content.classList.add('content-display');
-        getVideosByMovieId(movieId, content);
-    }
-
-    if (id === 'content-close') {
-        const content = event.target.parentElement;
-        content.classList.remove('content-display');
+        // Get movie details
+        getMovieDetails(movieId);
     }
 }
 
+searchButton.onclick = function (event) {
+    event.preventDefault();
+    const value = searchInput.value;
+    if (value) {
+        showLoading(true);
+        searchMovie(value);
+    }
+    resetInput();
+}
+
+// Allow Enter key to search
+searchInput.addEventListener('keypress', function (event) {
+    if (event.key === 'Enter') {
+        searchButton.click();
+    }
+})
+
 // Initialize the search
 searchMovie(INITIAL_SEARCH_VALUE);
-searchUpcomingMovies();
-getTopRatedMovies();
-searchPopularMovie();
-getTrendingMovies();
+
