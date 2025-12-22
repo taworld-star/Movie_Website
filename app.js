@@ -119,8 +119,8 @@ function renderSearchMovies(data) {
 
 function generateMoviesBlock(data) {
     const movies = data.results;
-    const section = document.createElement('section');
-    section.setAttribute('class', 'section');
+    const section = document.createElement('div');
+    section.setAttribute('class', 'movies-grid');
 
     for (let i = 0; i < movies.length; i++) {
         const { poster_path, id } = movies[i];
