@@ -7,7 +7,9 @@
 ### **1️⃣ Setup Awal (Lakukan 1x)**
 
 ```bash
-git clone <url-repository>
+git clone <url-repository>git fetch origin
+git checkout nama-branchgit fetch origin
+git checkout nama-branch
 cd Movie_Website
 git config user.name "Nama Anda"
 git config user.email "email@anda.com"

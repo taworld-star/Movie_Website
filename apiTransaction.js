@@ -16,41 +16,48 @@ function generateMovieDBUrl(path) {
     return url;
 }
 
-
 function getTopRatedMovies() {
     const url = generateMovieDBUrl(`/movie/top_rated`);
-    const render = renderMovies.bind({ title: 'Top Rated Movies' })
-    requestMovies(url, render, handleGeneralError);
+    requestMovies(url, renderMovies, handleGeneralError);
 }
 
 function getTrendingMovies() {
     const url = generateMovieDBUrl('/trending/movie/day');
-    const render = renderMovies.bind({ title: 'Trending Movies' })
-    requestMovies(url, render, handleGeneralError);
+    requestMovies(url, renderMovies, handleGeneralError);
 }
-
 
 function searchUpcomingMovies() {
     const url = generateMovieDBUrl('/movie/upcoming');
-    const render = renderMovies.bind({ title: 'Upcoming Movies' })
-    requestMovies(url, render, handleGeneralError);
+    requestMovies(url, renderMovies, handleGeneralError);
 }
 
 function searchPopularMovie() {
     const url = generateMovieDBUrl('/movie/popular');
-    const render = renderMovies.bind({ title: 'Popular Movies' });
-    requestMovies(url, render, handleGeneralError);
+    requestMovies(url, renderMovies, handleGeneralError);
 }
 
-// Invoke a different function for search movies
+// Search movies
 function searchMovie(value) {
     const url = generateMovieDBUrl('/search/movie') + '&query=' + value;
     requestMovies(url, renderSearchMovies, handleGeneralError);
 }
 
+// Get movie details
+function getMovieDetails(movieId) {
+    const url = generateMovieDBUrl(`/movie/${movieId}`);
+    requestMovies(url, (data) => {
+        showMovieModal(data);
+        getVideosByMovieId(movieId);
+    }, handleGeneralError);
+}
 
-function getVideosByMovieId(movieId, content) {
+// Get videos/trailers for movie
+function getVideosByMovieId(movieId) {
     const url = generateMovieDBUrl(`/movie/${movieId}/videos`);
-    const render = createVideoTemplate.bind({ content });
-    requestMovies(url, render, handleGeneralError);
+    requestMovies(url, (data) => {
+        const trailersContainer = document.querySelector('#trailers-container');
+        if (trailersContainer) {
+            trailersContainer.innerHTML = createVideoTemplate(data);
+        }
+    }, handleGeneralError);
 }
