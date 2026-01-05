@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  my-static-site:
+    image: hildakholifahh/my-static-site:latest
+    container_name: my-static-site-container
+    ports:
+      - "8080:80"
+    environment:
+      - TZ=Asia/Jakarta
+    restart: unless-stopped
+    # Uncomment untuk mempersist data jika diperlukan
+    # volumes:
+    #   - ./data:/app/data
